@@ -2,16 +2,34 @@
 
 ![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black)
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat&logo=microsoftsqlserver&logoColor=white)
+![Excel](https://img.shields.io/badge/Excel-217346?style=flat&logo=microsoftexcel&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
 
-## 📋 Project Overview
-
-An end-to-end data pipeline analysing **2.3 million NHS A&E attendance records** to evaluate performance against the national **4-hour waiting time standard** (78% target).
+>**End-to-end data pipeline analysing 2.3 million NHS A&E attendance records to evaluate performance against the national 78% 4-hour waiting time standard.**
 
 **Key Finding:** National performance at 73.8% reveals a 7.1 percentage point gap between large hospital performance and small trust averages, indicating major A&E departments face significant capacity pressure.
 
 ---
+## 📋 Project Overview
 
+This project transforms raw NHS England A&E data into actionable insights through a complete data pipeline:
+
+**What I Built:**
+- 🧹 **Data Preparation:** Cleaned messy NHS CSV files in Excel (header flattening, metadata removal)
+- 🗄️ **Database Layer:** Imported and transformed data using SQL Server and T-SQL
+- 📊 **Visualisation Layer:** Built interactive Power BI dashboard with DAX measures
+- 📈 **Insight Generation:** Identified critical performance gaps and capacity bottlenecks
+
+**The Challenge:**  
+The NHS has an interim target that **78% of A&E patients should be seen within four hours** by March 2026. December 2025 data shows the NHS is falling short at 73.8% - but the simple average hides a more complex story.
+
+**The Discovery:**  
+Using volume-weighted analysis, I uncovered that whilst the average trust appears to perform at 80.9%, the patient experience is significantly worse because **large hospitals treating the majority of patients are underperforming**. Type 1 Major A&E departments achieve only 59.6% - the primary bottleneck in the system.
+
+**Why This Matters:**  
+This analysis demonstrates that resource allocation must be **volume-weighted and department-specific**, not evenly distributed across all trusts. Policy interventions should target high-volume Type 1 departments in underperforming regions (North West, Midlands) for maximum patient impact.
+
+---
 ## 🎯 Business Problem
 
 The NHS has a recovery target that **78% of A&E patients should be seen within 4 hours**. This project analyzes December 2025 performance to:
