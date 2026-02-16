@@ -6,9 +6,9 @@
 
 ## 📋 Project Overview
 
-An end-to-end data pipeline analysing **2.4 million NHS A&E attendance records** to evaluate performance against the national **4-hour waiting time standard** (78% target).
+An end-to-end data pipeline analysing **2.3 million NHS A&E attendance records** to evaluate performance against the national **4-hour waiting time standard** (78% target).
 
-**Key Finding:** National performance at 73.2% reveals a 6.3 percentage point gap between large hospital performance and small trust averages, indicating major A&E departments face significant capacity pressure.
+**Key Finding:** National performance at 73.8% reveals a 7.1 percentage point gap between large hospital performance and small trust averages, indicating major A&E departments face significant capacity pressure.
 
 ---
 
