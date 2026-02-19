@@ -79,6 +79,310 @@ Raw CSV Data ──SQL──> Cleaned Database ──Power BI──> Interactive
 | **Version Control** | GitHub | Documentation and portfolio |
 
 ---
+## 🛠️ Data Preparation & Implementation
+
+### Excel Pre-Processing (Data Hygiene)
+
+**Challenge:** Raw NHS data files are designed for human readability (PDFs, reports), not machine processing. Manual cleaning in Excel Online was required before importing into SQL.
+
+---
+
+#### 1. Header Flattening & Restructuring
+
+**Problem:**  
+NHS files use merged cells and multi-row headers. For example:
+- Row 1: "A&E Attendances" (merged across columns)
+- Row 2: "Type 1 Department - Major A&E | Type 2 Department - Single Speciality | Type 3 Department - Other A&E/ Minor Injury Unit | Total attendances" (sub-headers)
+
+SQL cannot parse hierarchical headers — it expects a single header row with unique column names.
+
+**Solution:**
+- Collapsed multi-row headers into a single row
+- Renamed columns to machine-readable format:
+  - `total_att_t1`, `total_att_t2`, `total_att_t3`
+
+**Result:** Column names SQL Server could recognise as distinct fields
+
+---
+#### 2. Metadata Removal
+
+**Problem:**  
+- 14 rows of introductory text at the top (summary, source, etc)
+- Creates a non-rectangular dataset with mixed content types
+- National (England) summary data at the top of table separted from the individual data
+
+**Solution:**
+- Deleted all rows above the actual column headers
+- Created a clean rectangular dataset where every row is a data record
+- Removed National (England) summary data 
+
+**Result:** Consistent structure — header row followed by data rows only
+
+---
+#### 3. Numeric Field Cleaning (MIGHT NEED TO MOVE THIS)
+
+**Problem:**  
+- Comma separators in numbers (e.g., `2,300`) → SQL treats as text
+- Clinical suppression marks (`-`) → cannot cast to `INT`
+- Percentage symbols (e.g., `73.5%`) → cannot cast to `DECIMAL`
+
+**Solution:**
+- Used **Find & Replace** to remove all commas from numeric columns
+- Documented suppression marks for later `NULLIF()` handling in SQL
+- Identified percentage columns for `REPLACE('%', '')` transformation
+- when importing data converted all data to text `NVARCHAR(MAX)`
+
+**Result:** Data ready for type casting without import errors 
+
+---
+#### 4. File Format Conversion
+
+**Problem:**  
+`.xlsx` files contain hidden formatting, styles, and formulas that can cause SSMS Import Wizard to fail or misinterpret data.
+
+**Solution:**
+- Exported as **CSV (Comma Separated Values)**
+- Plain text format with no embedded formatting
+
+**Result:** Clean, lightweight file optimised so it can be imported into the SQL Server
+---
+
+### Phase 2: SQL Transformation (Silver Layer)
+
+**Script:** [`sql/data_cleaning.sql`](sql/data_cleaning.sql)
+
+**Objective:** Transform raw `NVARCHAR` data into strongly-typed, analysis-ready format.
+
+---
+#### Key Transformations
+
+**1. Clinical Suppression Handling**
+
+NHS England uses `-` to indicate data suppressed for patient confidentiality (small numbers that could identify individuals).
+```sql
+-- Convert '-' to NULL before type casting
+TRY_CAST(NULLIF(total_att_t1, '-') AS INT) AS total_att_type_1
+```
+
+**Why `NULLIF` before `TRY_CAST`?**  
+- `NULLIF(column, '-')` returns `NULL` if value is `-`, otherwise returns the value
+- `TRY_CAST` then safely converts valid numbers to `INT`, returns `NULL` for invalid values
+- No errors, no data loss
+
+---
+**2. Percentage Symbol Removal**
+
+Performance metrics stored as strings like `"73.5%"`.
+```sql
+-- Remove % symbol, then cast to decimal
+TRY_CAST(
+    REPLACE(NULLIF(pct_all, '-'), '%', '') 
+    AS DECIMAL(10,2)
+) AS performance_pct_total
+```
+**Transformation chain:**
+1. `NULLIF(pct_all, '-')` → Handle suppression
+2. `REPLACE(..., '%', '')` → Remove percentage symbol
+3. `TRY_CAST(...AS DECIMAL(10,2))` → Convert to number with 2 decimal places
+
+---
+
+**3. Semantic Column Renaming**
+
+Raw column names were cryptic (`total_att_t1`, `under4_all`). Renamed for clarity:
+
+| Original | Renamed | Meaning |
+|----------|---------|---------|
+| `total_att_t1` | `total_att_type_1` | Total attendances at Type 1 departments |
+| `under4_all` | `seen_under_4hr_total` | Total patients seen within 4 hours |
+| `over4_t1` | `waits_over_4hr_type_1` | Type 1 patients waiting over 4 hours |
+| `pct_all` | `performance_pct_total` | Overall 4-hour performance percentage |
+
+**Why rename?**  
+Self-documenting code. Future analysts can understand the data without referring to external documentation.
+
+---
+
+**4. Complete Transformation Script**
+```sql
+-- Create cleaned table from raw data
+SELECT 
+    org_code,
+    region,
+    org_name,
+    
+    -- Type 1 (Major A&E) metrics
+    TRY_CAST(NULLIF(total_att_t1, '-') AS INT) AS total_att_type_1,
+    TRY_CAST(NULLIF(under4_t1, '-') AS INT) AS seen_under_4hr_type_1,
+    TRY_CAST(NULLIF(over4_t1, '-') AS INT) AS waits_over_4hr_type_1,
+    
+    -- Type 2 (Single Specialty) metrics
+    TRY_CAST(NULLIF(total_att_t2, '-') AS INT) AS total_att_type_2,
+    TRY_CAST(NULLIF(under4_t2, '-') AS INT) AS seen_under_4hr_type_2,
+    TRY_CAST(NULLIF(over4_t2, '-') AS INT) AS waits_over_4hr_type_2,
+    
+    -- Type 3 (Minor Injury) metrics
+    TRY_CAST(NULLIF(total_att_t3, '-') AS INT) AS total_att_type_3,
+    TRY_CAST(NULLIF(under4_t3, '-') AS INT) AS seen_under_4hr_type_3,
+    TRY_CAST(NULLIF(over4_t3, '-') AS INT) AS waits_over_4hr_type_3,
+    
+    -- Overall metrics
+    TRY_CAST(NULLIF(total_att_all, '-') AS INT) AS total_att,
+    TRY_CAST(NULLIF(under4_all, '-') AS INT) AS seen_under_4hr_total,
+    TRY_CAST(NULLIF(over4_all, '-') AS INT) AS waits_over_4hr_total,
+    
+    -- Performance percentages
+    TRY_CAST(REPLACE(NULLIF(pct_all, '-'), '%', '') AS DECIMAL(10,2)) AS performance_pct_total,
+    TRY_CAST(REPLACE(NULLIF(pct_t1, '-'), '%', '') AS DECIMAL(10,2)) AS performance_pct_type_1,
+    TRY_CAST(REPLACE(NULLIF(pct_t2, '-'), '%', '') AS DECIMAL(10,2)) AS performance_pct_type_2,
+    TRY_CAST(REPLACE(NULLIF(pct_t3, '-'), '%', '') AS DECIMAL(10,2)) AS performance_pct_type_3,
+    
+    -- Emergency admissions
+    TRY_CAST(NULLIF(adm_t1, '-') AS INT) AS emergency_adm_type_1,
+    TRY_CAST(NULLIF(adm_t2, '-') AS INT) AS emergency_adm_type_2,
+    TRY_CAST(NULLIF(adm_t3_4, '-') AS INT) AS emergency_adm_type_3_4,
+    TRY_CAST(NULLIF(adm_total_ae, '-') AS INT) AS emergency_adm_total_ae,
+    TRY_CAST(NULLIF(adm_non_ae, '-') AS INT) AS other_emergency_adm,
+    TRY_CAST(NULLIF(adm_total, '-') AS INT) AS emergency_adm_total,
+    
+    -- Decision-to-admit waiting times
+    TRY_CAST(NULLIF(dta_over4, '-') AS INT) AS over_4hr_waits,
+    TRY_CAST(NULLIF(dta_over12, '-') AS INT) AS over_12hr_waits
+
+INTO nhs_ae_cleaned
+FROM nhs_ae_dec25;
+
+**Output:** `nhs_ae_cleaned` table
+- 197 rows (trusts)
+- 25 columns (all strongly typed)
+- Ready for analysis
+
+---
+
+### Phase 3: Power BI Visualisation (Gold Layer)
+
+**Connection Method:** Import Mode (Direct Query to SQL Server)
+
+---
+
+#### 1. Data Connection
+
+**Steps:**
+1. Power BI Desktop → Get Data → SQL Server
+2. Server: `localhost` (or your server name)
+3. Database: `[your_database_name]`
+4. Table: `nhs_ae_cleaned`
+5. Import mode selected for performance
+
+---
+
+#### 2. DAX Measures Created
+
+**Volume-Weighted National Performance**
+```dax
+National Performance % = 
+DIVIDE(
+    SUM(nhs_ae_cleaned[seen_under_4hr_total]),
+    SUM(nhs_ae_cleaned[total_att]),
+    0
+) * 100
+```
+
+**Why volume-weighted?**  
+Reflects actual patient experience. A trust with 10,000 patients should have more influence on the national average than a trust with 100 patients.
+
+---
+
+**Average Trust Performance (Unweighted)**
+```dax
+Average Trust Performance % = 
+AVERAGE(nhs_ae_cleaned[performance_pct_total])
+```
+
+**Why unweighted?**  
+Shows how the typical trust is performing, regardless of size. Useful for comparing trust management effectiveness.
+
+---
+
+**Performance Gap**
+```dax
+Performance Gap = 
+[Average Trust Performance %] - [National Performance %]
+```
+
+**Why this matters?**  
+A large gap indicates volume is concentrated in underperforming hospitals.
+
+---
+**Target & Variance**
+```dax
+Target % = 78
+
+Variance from Target = 
+[National Performance %] - [Target %]
+```
+
+---
+
+**Trust Compliance Metrics**
+```dax
+Number of Trusts = 
+DISTINCTCOUNT(nhs_ae_cleaned[org_code])
+
+Trusts Meeting Target = 
+CALCULATE(
+    DISTINCTCOUNT(nhs_ae_cleaned[org_code]),
+    nhs_ae_cleaned[performance_pct_total] >= 78
+)
+
+Trusts Meeting Target (Text) = 
+[Trusts Meeting Target] & " / " & [Number of Trusts]
+```
+
+---
+
+**Department Type Performance**
+```dax
+Type 1 Performance % = 
+DIVIDE(
+    SUM(nhs_ae_cleaned[seen_under_4hr_type_1]),
+    SUM(nhs_ae_cleaned[total_att_type_1]),
+    0
+) * 100
+
+Type 2 Performance % = 
+DIVIDE(
+    SUM(nhs_ae_cleaned[seen_under_4hr_type_2]),
+    SUM(nhs_ae_cleaned[total_att_type_2]),
+    0
+) * 100
+
+Type 3 Performance % = 
+DIVIDE(
+    SUM(nhs_ae_cleaned[seen_under_4hr_type_3]),
+    SUM(nhs_ae_cleaned[total_att_type_3]),
+    0
+) * 100
+```
+
+---
+#### 3. Visualisation Techniques
+
+**Conditional Formatting**
+- KPI cards: Green (≥78%), Red (<78%)
+- Regional bars: Colour-coded by performance vs target
+- Traffic light system for at-a-glance status
+
+**Analytics Lines**
+- 78% target line on all performance charts
+- Reference lines for comparison across visuals
+
+**Interactive Features**
+- Region slicer for filtering
+- Department type drill-down
+- Trust-level tooltips
+
+---
 ## 📊 Dashboard Pages
 
 ### Page 1: Executive Overview
