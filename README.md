@@ -14,30 +14,27 @@
 
 This project transforms raw NHS England A&E data into actionable insights through a complete data pipeline:
 
-**What I Built:**
-- 🧹 **Data Preparation:** Cleaned messy NHS CSV files in Excel (header flattening, metadata removal)
-- 🗄️ **Database Layer:** Imported and transformed data using SQL Server and T-SQL
+**What I Did:**
+- 🧹 **Data Preparation:** Cleaned messy NHS CSV files in Excel (header flattening, metadata removal, numeric standardisation)
+- 🗄️ **Database Layer:** Imported and transformed data using SQL Server and T-SQL scripting
 - 📊 **Visualisation Layer:** Built interactive Power BI dashboard with DAX measures
 - 📈 **Insight Generation:** Identified critical performance gaps and capacity bottlenecks
 
 **The Challenge:**  
-The NHS has an interim target that **78% of A&E patients should be seen within four hours** by March 2026. December 2025 data shows the NHS is falling short at 73.8% - but the simple average hides a more complex story.
+The NHS has an interim target, introduced in June 2025, that **78% of A&E patients should be seen within four hours** by March 2026. December 2025 data shows the NHS is falling short at 73.8%; contributing factors include seasonal winter pressures, bed capacity constraints, staffing challenges, and ambulance handover delays.
 
-**The Discovery:**  
-Using volume-weighted analysis, I uncovered that whilst the average trust appears to perform at 80.9%, the patient experience is significantly worse because **large hospitals treating the majority of patients are underperforming**. Type 1 Major A&E departments achieve only 59.6% - the primary bottleneck in the system.
+Additionally, raw NHS England data files are not optimised for machine processing; they are designed for **human readability**. The initial data contained merged headers, metadata rows, clinical suppression symbols (`-`), comma-separated numbers, and percentage symbols; SQL and Power BI cannot process these directly. Each layer of the pipeline required intentional data engineering to transform the data into a usable state.
 
-**Why This Matters:**  
+**What Was Found:**  
+Using volume-weighted analysis, it was observed that the average trust appears to perform at **80.9%**.  As national performance is at **73.8%**; a **7.1 percentage point gap** reveals that the patient experience is significantly worse because **large hospitals treating the majority of patients are underperforming**. 
+
+- **Type 1 Major A&E** departments achieve only **59.6%**; this is the primary bottleneck in the system.
+- **~609,000 patients** waited over four hours in December 2025 alone
+- **Only 84 out of the 197 trusts and centres (42.6%)** are meeting the 78% interim standard
+- **North West (71.5%)** and **Midlands (71.6%)** are the worst performing regions 
+
+**Why Does This Matter:**  
 This analysis demonstrates that resource allocation must be **volume-weighted and department-specific**, not evenly distributed across all trusts. Policy interventions should target high-volume Type 1 departments in underperforming regions (North West, Midlands) for maximum patient impact.
-
----
-## 🎯 Business Problem
-
-The NHS has a recovery target that **78% of A&E patients should be seen within 4 hours**. This project analyzes December 2025 performance to:
-
-- ✅ Identify which regions are failing to meet targets
-- ✅ Understand performance differences between department types
-- ✅ Quantify the gap between large and small hospitals
-- ✅ Provide actionable insights for resource allocation
 
 ---
 
@@ -49,14 +46,39 @@ Raw CSV Data ──SQL──> Cleaned Database ──Power BI──> Interactive
   (Bronze)             (Silver)                        (Gold)
 ```
 
-**Tech Stack:**
-- **Database:** SQL Server (SSMS)
-- **Transformation:** T-SQL
-- **Visualisation:** Power BI Desktop
-- **Source:** NHS England A&E Attendances (December 2024)
+### Layer Descriptions
+
+**🥉 Bronze (Raw Layer)**
+- NHS England CSV file imported into SQL Server via SSMS Import Wizard
+- Data preserved in original format as `NVARCHAR(MAX)`
+- Clinical suppression marks (`-`) and percentage symbols kept as-is
+- Purpose: Preserve raw source data without alteration
+
+**🥈 Silver (Cleaned Layer)**
+- T-SQL transformations applied to Bronze data
+- Handled NULL values, type casting, and semantic renaming
+- Output: `nhs_ae_cleaned` table (197 trusts, 25 columns)
+- Purpose: Analysis-ready, standardised dataset
+
+**🥇 Gold (Analytics Layer)**
+- Power BI connected directly to SQL Server
+- DAX measures for business logic and KPI calculations
+- Interactive multi-page dashboard for stakeholder use
+- Purpose: Executive-ready insights and visualisations
 
 ---
 
+### Tech Stack
+
+| Component | Tool | Purpose |
+|-----------|------|---------|
+| **Pre-Processing** | Microsoft Excel Online | Data hygiene and CSV preparation |
+| **Database** | SQL Server (SSMS) | Data storage and querying |
+| **Transformation** | T-SQL | Data cleaning and type casting |
+| **Visualisation** | Power BI Desktop | Dashboard and reporting |
+| **Version Control** | GitHub | Documentation and portfolio |
+
+---
 ## 📊 Dashboard Pages
 
 ### Page 1: Executive Overview
