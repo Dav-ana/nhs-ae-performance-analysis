@@ -147,7 +147,7 @@ SQL cannot parse hierarchical headers — it expects a single header row with un
 **Result:** Clean, lightweight file optimised so it can be imported into the SQL Server
 ---
 
-### Phase 2: SQL Transformation (Silver Layer)
+### SQL Transformation (Silver Layer)
 
 >**When importing data converted all data to text `NVARCHAR(MAX)`**
   
