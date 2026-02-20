@@ -258,8 +258,7 @@ FROM nhs_ae_dec25;
 - 197 rows (trusts)
 - 25 columns (all strongly typed)
 - Ready for analysis
-
----
+```
 
 ### Phase 3: Power BI Visualisation (Gold Layer)
 
@@ -271,10 +270,9 @@ FROM nhs_ae_dec25;
 
 **Steps:**
 1. Power BI Desktop → Get Data → SQL Server
-2. Server: `localhost` (or your server name)
-3. Database: `[your_database_name]`
+2. Server: `localhost` 
+3. Import mode selected
 4. Table: `nhs_ae_cleaned`
-5. Import mode selected for performance
 
 ---
 
