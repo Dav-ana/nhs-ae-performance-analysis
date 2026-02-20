@@ -127,28 +127,30 @@ SQL cannot parse hierarchical headers — it expects a single header row with un
 - Percentage symbols (e.g., `73.5%`) → cannot cast to `DECIMAL`
 
 **Solution:**
-- Used **Find & Replace** to remove all commas from numeric columns
-- Documented suppression marks for later `NULLIF()` handling in SQL
-- Identified percentage columns for `REPLACE('%', '')` transformation
-- when importing data converted all data to text `NVARCHAR(MAX)`
+- Changed cell format from Number to General — automatically removed comma thousand separators
+- Suppression marks `(-)` left and documented for later `NULLIF()` handling in SQL
+- Identified percentage columns and documented for later `REPLACE('%', '')` transformation in SQL
 
-**Result:** Data ready for type casting without import errors 
+**Result:** Data CSV ready to import into SQL
 
 ---
 #### 4. File Format Conversion
 
 **Problem:**  
-`.xlsx` files contain hidden formatting, styles, and formulas that can cause SSMS Import Wizard to fail or misinterpret data.
+`.xlsx` files contain hidden formatting, styles, and formulas that can cause SSMS Import Wizard to fail to import or misinterpret the data.
 
 **Solution:**
 - Exported as **CSV (Comma Separated Values)**
 - Plain text format with no embedded formatting
+
 
 **Result:** Clean, lightweight file optimised so it can be imported into the SQL Server
 ---
 
 ### Phase 2: SQL Transformation (Silver Layer)
 
+>**When importing data converted all data to text `NVARCHAR(MAX)`**
+  
 **Script:** [`sql/data_cleaning.sql`](sql/data_cleaning.sql)
 
 **Objective:** Transform raw `NVARCHAR` data into strongly-typed, analysis-ready format.
