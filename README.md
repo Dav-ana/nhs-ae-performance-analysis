@@ -278,36 +278,36 @@ FROM nhs_ae_dec25;
 
 #### 2. DAX Measures Created
 
-**Volume-Weighted National Performance**
+**National Performance Percentage (Volume-Weighted)**
 ```dax
-National Performance % = 
+National Performance = 
 DIVIDE(
     SUM(nhs_ae_cleaned[seen_under_4hr_total]),
     SUM(nhs_ae_cleaned[total_att]),
     0
-) * 100
+)
 ```
-
+*Format changed to percentage
 **Why volume-weighted?**  
-Reflects actual patient experience. A trust with 10,000 patients should have more influence on the national average than a trust with 100 patients.
+This reflects actual patient experience. A bigger trust with 10,000 patients for example should have more influence on the national average than a smaller trust with around 100 patients.
 
 ---
 
-**Average Trust Performance (Unweighted)**
+**Average Performance Percentage (Unweighted)**
 ```dax
-Average Trust Performance % = 
+Average Performance % = 
 AVERAGE(nhs_ae_cleaned[performance_pct_total])
 ```
-
+*Format changed to percentage
 **Why unweighted?**  
-Shows how the typical trust is performing, regardless of size. Useful for comparing trust management effectiveness.
+This shows how the typical trust is performing on average, regardless of size. This is useful for comparing trust management effectiveness.
 
 ---
 
 **Performance Gap**
 ```dax
 Performance Gap = 
-[Average Trust Performance %] - [National Performance %]
+[Average Performance] - [National Performance ]
 ```
 
 **Why this matters?**  
@@ -348,28 +348,31 @@ DIVIDE(
     SUM(nhs_ae_cleaned[seen_under_4hr_type_1]),
     SUM(nhs_ae_cleaned[total_att_type_1]),
     0
-) * 100
-
+)
+```
+```
 Type 2 Performance % = 
 DIVIDE(
     SUM(nhs_ae_cleaned[seen_under_4hr_type_2]),
     SUM(nhs_ae_cleaned[total_att_type_2]),
     0
-) * 100
-
+)
+```
+```
 Type 3 Performance % = 
 DIVIDE(
     SUM(nhs_ae_cleaned[seen_under_4hr_type_3]),
     SUM(nhs_ae_cleaned[total_att_type_3]),
     0
-) * 100
+) 
 ```
+*Format changed to percentage for each department calculation
 
 ---
 #### 3. Visualisation Techniques
 
 **Conditional Formatting**
-- KPI cards: Green (≥78%), Red (<78%)
+- KPI cards: Green (≥78%), Amber (Between 70-78), Red (<70%)
 - Regional bars: Colour-coded by performance vs target
 - Traffic light system for at-a-glance status
 
@@ -390,14 +393,14 @@ DIVIDE(
 
 **Key Metrics:**
 - Total Attendances: **2.3M**
-- National Performance: **73.2%** 🔴 (below 78% target)
+- National Performance: **73.8%** (below 78% target)
 - Total Breaches: **609K patients**
-- Trusts Meeting Target: **84 / 198 (42.4%)**
+- Trusts Meeting Target: **84 / 197 (42.6%)**
 
 **Key Insights:**
-- 6.3pp gap between average trust (79.5%) and national weighted (73.2%) performance
-- Type 1 Major A&E departments at 68.5% - primary bottleneck
-- Regional disparity: South West (82.5%) vs London (72.8%)
+- 7pp gap between average trust (80.9.%) and national weighted (73.8%) performance
+- Type 1 Major A&E departments at 58.6% - primary bottleneck
+- Regional disparity: London (76.3%) vs North West (71.5)
 
 ### Page 2: Regional Deep Dive
 *[Coming soon]*
