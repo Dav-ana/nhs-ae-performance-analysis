@@ -260,7 +260,7 @@ FROM nhs_ae_dec25;
 - Ready for analysis
 ```
 
-### Phase 3: Power BI Visualisation (Gold Layer)
+### Power BI Visualisation (Gold Layer)
 
 **Connection Method:** Import Mode (Direct Query to SQL Server)
 
@@ -274,10 +274,23 @@ FROM nhs_ae_dec25;
 3. Import mode selected
 4. Table: `nhs_ae_cleaned`
 
+**Result:** 197 trusts × 25 columns successfully imported
+
 ---
 
 #### 2. DAX Measures Created
 
+##### Page 1
+
+**Total A&E Attendances**
+```dax
+Total A&E Attendances =
+SUM(nhs_ae_cleaned[total_att])
+```
+**Purpose** 
+Overall total of people seen in the NHS Nationally.  
+
+---
 **National Performance Percentage (Volume-Weighted)**
 ```dax
 National Performance = 
@@ -288,39 +301,31 @@ DIVIDE(
 )
 ```
 *Format changed to percentage
+**Purpose**
+This reflects actual patient experience. Patient centric performance calculation so the proportion of people seen within 4 hours in the NHS as a whole nationally. 
+
 **Why volume-weighted?**  
-This reflects actual patient experience. A bigger trust with 10,000 patients for example should have more influence on the national average than a smaller trust with around 100 patients.
+ A bigger trust with 10,000 patients for example should have more influence on the national average than a smaller trust with around 100 patients.
 
 ---
 
 **Average Performance Percentage (Unweighted)**
 ```dax
-Average Performance % = 
-AVERAGE(nhs_ae_cleaned[performance_pct_total])
+Average Performance =
+AVERAGE(nhs_ae_cleaned[performance_pct_total])/100
 ```
 *Format changed to percentage
-**Why unweighted?**  
-This shows how the typical trust is performing on average, regardless of size. This is useful for comparing trust management effectiveness.
+**Purpose**
+This shows how the typical trust is performing on average, regardless of size. This is useful for comparing trust management effectiveness. A comparison of  weighted vs unweighted percentages reveals whether large or small hospitals are driving performance.
 
 ---
-
-**Performance Gap**
+**Breaches**
 ```dax
-Performance Gap = 
-[Average Performance] - [National Performance ]
+Breaches =
+SUM(nhs_ae_cleaned[waits_over_4hr_total])
 ```
-
-**Why this matters?**  
-A large gap indicates volume is concentrated in underperforming hospitals.
-
----
-**Target & Variance**
-```dax
-Target % = 78
-
-Variance from Target = 
-[National Performance %] - [Target %]
-```
+**Purpose** 
+Observation of how many people who waited over 4 hours to be seen in the NHS overall nationally
 
 ---
 
@@ -335,10 +340,9 @@ CALCULATE(
     nhs_ae_cleaned[performance_pct_total] >= 78
 )
 
-Trusts Meeting Target (Text) = 
+Trusts Meeting Target = 
 [Trusts Meeting Target] & " / " & [Number of Trusts]
 ```
-
 ---
 
 **Department Type Performance**
@@ -367,29 +371,138 @@ DIVIDE(
 ) 
 ```
 *Format changed to percentage for each department calculation
+**This is also used on page 3**
 
 ---
-#### 3. Visualisation Techniques
+
+##### Page 2
+
+**Regional-Level Measures**
+```dax
+Regional Total Attendances =
+SUM(nhs_ae_cleaned[total_att])
+```
+
+```dax
+Regional Performance % = 
+DIVIDE(
+    SUM(nhs_ae_cleaned[seen_under_4hr_total]),
+    SUM(nhs_ae_cleaned[total_att]),
+    0
+)
+*Format changed to percentage
+```
+```dax
+Regional Breaches =
+SUM(nhs_ae_cleaned[waits_over_4hr_total])
+```
+```dax
+Regional Trusts Count = 
+DISTINCTCOUNT(nhs_ae_cleaned[org_code])
+
+Regional Trusts Meeting Target = 
+CALCULATE(
+    DISTINCTCOUNT(nhs_ae_cleaned[org_code]),
+    nhs_ae_cleaned[performance_pct_total] >= 78
+)
+Regional Trusts Meeting Target =
+[Regional Trusts Meeting Tartget Calc] & "/" & [Regional Trust Count]
+```
+**Purpose:** Enable interactive regional analysis via slicer on Page 2.
+
+---
+##### Page 3
+
+**Trust-Level Measures**
+```dax
+Trust Total Attendances =
+SUM(nhs_ae_cleaned[total_att])
+```
+
+```dax
+Trust Performance % = 
+DIVIDE(
+    SUM(nhs_ae_cleaned[seen_under_4hr_total]),
+    SUM(nhs_ae_cleaned[total_att]),
+    0
+)
+*Format changed to percentage
+```
+```dax
+Trust Breaches =
+SUM(nhs_ae_cleaned[waits_over_4hr_total])
+```
+```dax
+Trust Region = 
+SELECTEDVALUE(nhs_ae_cleaned[region], "No Trust Selected")
+```
+---
+**Capacity Pressure Indicators**
+```dax
+Patients Waiting >4hrs (DTA) = 
+SUM(nhs_ae_cleaned[over_4hr_waits])
+
+Patients Waiting >12hrs (DTA) = 
+SUM(nhs_ae_cleaned[over_12hr_waits])
+
+% Waiting >12hrs (DTA) = 
+DIVIDE(
+    [Patients Waiting >12hrs (DTA)],
+    [Patients Waiting >4hrs (DTA)],
+    0
+)
+*Format changed to percentage
+```
+**Clinical significance:** Decision-to-admit (DTA) waits indicate bed capacity problems, not A&E efficiency. >12hr waits represent severe capacity crisis.
+
+**Purpose:** Slicer used for page 3's iteractive individual trust deep-dive analysis.
+
+---
+#### 3. Dashboard Design & Visualisation Techniques
+
+##### Page Architecture 
+Three Pages 
+- **Page 1:** Executive Overview (national summary)
+- **Page 2:** Regional Deep Dive (interactive regional filter)
+- **Page 3:** Trust-Level Analysis (individual trust deep-dive)
+
+**Canvas:** 16:9 ratio (1280×720)
+
+---
+
+##### Visual Design
 
 **Conditional Formatting**
-- KPI cards: Green (≥78%), Amber (Between 70-78), Red (<70%)
-- Regional bars: Colour-coded by performance vs target
-- Traffic light system for at-a-glance status
+Implemented traffic light system across all visuals:
+- **Green** (≥78%): Meeting target — Green
+- **Orange** (70-78%): At risk — Orange
+- **Red** (<70%): Critical — Red 
+
+Applied to:
+- KPI card font colours
+- KPI card backgrounds (light tints)
+- Bar chart colours
+- Table cell backgrounds
+
+---
 
 **Analytics Lines**
 - 78% target line on all performance charts
 - Reference lines for comparison across visuals
 
+---
+
 **Interactive Features**
 - Region slicer for filtering
 - Department type drill-down
-- Trust-level tooltips
+- Trust slicer: Dropdown of 197 trusts 
 
 ---
 ## 📊 Dashboard Pages
 
 ### Page 1: Executive Overview
-*[Screenshot coming soon]*
+<img width="979" height="555" alt="image" src="https://github.com/user-attachments/assets/64a8f867-7d25-4ee0-b20a-d6d36c01a1c0" />
+
 
 **Key Metrics:**
 - Total Attendances: **2.3M**
