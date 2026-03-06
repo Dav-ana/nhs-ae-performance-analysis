@@ -493,16 +493,101 @@ Applied to:
 ---
 
 **Interactive Features**
-- Region slicer for filtering
-- Department type drill-down
-- Trust slicer: Dropdown of 197 trusts 
+1. **Region Slicer (Page 2):**
+   - Dropdown style for 7 NHS England regions
+   - Filters all visuals on page simultaneously
+   - Updates KPI cards, table, and chart dynamically
+
+2. **Trust Slicer (Page 3):**
+   - Dropdown style for 197 trusts
+   - Enables individual trust deep-dive
+   - Reveals operational bottlenecks at trust level
+
+3. **Cross-Filtering:**
+   - Click regional bar → filters trust table
+   - Click trust name → highlights in chart
+   - Supports exploratory analysis
+
+---
+#### 4. Key Visual Components
+
+##### Page 1: Executive Overview
+
+**KPI Cards (5):**
+1. Total Attendances: 2.3M
+2. National Performance: 73.8% (orange — below target)
+3. Average Trust Performance: 80.9% (green — above target)
+4. Total Breaches: 609K (red background)
+5. Trusts Meeting Target: 84/197
+
+**Charts:**
+- Regional performance bar chart (horizontal, sorted, conditional colours)
+- Department type column chart (Type 1/2/3 with distinct colours)
+- Performance gauge (curved, shows 73.8% vs 78% target)
+
+---
+
+##### Page 2: Regional Deep Dive
+
+**Components:**
+- Region slicer (dropdown)
+- 4 regional KPI cards (dynamic based on selection)
+- Trust performance table (scrollable, conditional formatting on Performance % column)
+- Trust ranking bar chart (horizontal, matches table sort order)
+
+**Design principle:** Side-by-side table + chart layout provides both detail (table) and visual ranking (chart).
+
+---
+
+##### Page 3: Trust-Level Analysis
+
+**Components:**
+- Trust slicer (dropdown, 197 options)
+- 4 trust KPI cards (including region badge)
+- Department type breakdown (identifies Type 1/2/3 bottleneck)
+- Capacity pressure section:
+  - Card: Patients waiting >4hrs (DTA)
+  - Card: Patients waiting >12hrs (DTA)
+  - Gauge: % in severe delay
+
+**Insight focus:** Distinguishes A&E efficiency issues from hospital capacity constraints.
+
+---
+
+#### 5. Performance Optimisation
+
+**Import Mode Benefits:**
+- Fast query performance (no live SQL connection delays)
+- Supports complex DAX calculations
+- Enables offline viewing after publish
+- Appropriate for monthly static data
+
+**Data Model:**
+- Single fact table (`nhs_ae_cleaned`)
+- No complex relationships needed
+- All calculations via DAX measures
+- Efficient star schema ready for expansion
+
+---
+
+#### 6. Accessibility & Usability
+
+**Design Considerations:**
+- Colour-blind friendly palette (NHS approved colours pass WCAG standards)
+- Clear visual hierarchy (size, colour, position)
+- Consistent layout across pages
+- Minimal scrolling required (16:9 ratio optimises screen real estate)
+- High contrast text (dark on light backgrounds)
+
+**User Journey:**
+1. Page 1: Understand national situation at a glance
+2. Page 2: Drill into specific region
+3. Page 3: Analyse individual trust operational issues
 
 ---
 ## 📊 Dashboard Pages
 
 ### Page 1: Executive Overview
-<img width="979" height="555" alt="image" src="https://github.com/user-attachments/assets/64a8f867-7d25-4ee0-b20a-d6d36c01a1c0" />
-
 
 **Key Metrics:**
 - Total Attendances: **2.3M**
